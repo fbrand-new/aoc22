@@ -1,25 +1,20 @@
-use std::fs;
+use std::{fs, collections::{hash_map, HashMap}};
 use regex::Regex;
 
 fn main() {
 
-    let data = fs::read_to_string("test.txt");
+    let data = fs::read_to_string("data.txt");
     if data.is_err() {
         println!("Could not read from file");
         return;
     }
-    part1(data.unwrap());
+    //part1(data.unwrap());
+    part2(data.unwrap());
 }
 
-fn part1(data: String) {
-    
-    // Define the three regexs
-    // let blue_regex = Regex::new(r"(?<blue>\d?) blue").expect("is a regex");
-    // let green_regex = Regex::new(r"(?<green>\d?) green").expect("is a regex");
-    // let red_regex = Regex::new(r"(?<red>\d?) red").expect("is a regex");
-    let color_vec = ["blue","red","green"];
-    let regex_color_vec = color_vec.map(|v| color_regex(v));
-    
+fn games(data: &str) -> Vec<Vec<&str>> {
+
+    // Extract all the games
     let games: Vec<_> = data.lines()
                                 .map(|v| { 
                                         let game: Vec<&str> = v.split(':').collect();
@@ -28,39 +23,81 @@ fn part1(data: String) {
                                                                     .collect();
                                         return sets;
                                     })
-                                .inspect(|v| {dbg!(v);})
+                                // .inspect(|v| {dbg!(v);})
                                 .collect();
+
+    return games;
+}
+
+fn part1(data: String) {
     
-    for regex in regex_color_vec {
-        for sets in games.iter() {
-            for set in sets {
-                let regex.captures(set);
+    let color_vec = [("blue",14),("red",12),("green",13)];
+    let regex_color_vec = color_vec.map(|v| color_regex(v));
+    
+    let games = games(&data);
+
+    // For every game extract every set
+    // Run the regex and compare the result
+    let mut num_games_valid = 0;
+    for (id,sets) in games.iter().enumerate(){
+        let mut is_game_valid = true;
+        for set in sets {
+            for regex in regex_color_vec.iter() {
+                if let Some(boxes) = regex.0.captures(set) {
+                    let cube_num = boxes["match"].parse::<i32>().expect("a number");
+                    // println!("Cube num: {} for set {}",cube_num,set);
+                    if cube_num > regex.1 {
+                        is_game_valid = false;
+                    }
+                }
             }
+        } 
+        if is_game_valid {
+            println!("id: {} is valid",id);
+            num_games_valid += id+1;
         }
     }
 
-    // for line in data.lines() {
-    //     let game: Vec<_> = line.split(':')
-    //                             .collect();
-    //     let sets: Vec<_> = game[1].trim()
-    //                                 .split(';')
-    //                                 .collect();
-    //     for set in sets.iter() {
-    //         // let colors = regex_color_vec.map(|v| v.captures(set));
-            // regex_color_vec.
-            // let mut blue: i32 = 0;
+    println!("sum of valid ids {}", num_games_valid);
 
-                            // .unwrap()["blue"]
-                            // .parse::<i32>())
-                            // .map(|v| v.expect("an integer"));
-            // // for regex in regex_color_vec {
-            // //     if let Some(v) = regex.captures(set) {
-            // //         blue = v["blue"].parse::<i32>().unwrap();
-            // //     }
-            // // }
 }
 
-fn color_regex(color: &str) -> Regex {
-    let regex = Regex::new(format!(r"(?<{}>\d?) {}",color,color).as_str()).expect("is a regex");
-    return regex;
+fn part2(data: String) {
+    let colors = [("green",0),("red",0),("blue",0)];
+    let regex_color = colors.map(|v| (v.0,color_regex(v)));
+    
+    let games = games(&data);
+
+    let mut result = 0;
+    for sets in games.iter() {
+        let mut max_cubes = HashMap::from([("red",0),("blue",0),("green",0)]) ;
+        for set in sets {
+            for regex in regex_color.iter() {
+                if let Some(cube) = regex.1.0.captures(set) {
+                    let cube_val = cube["match"].parse::<u32>().expect("is a number");
+                    if cube_val > max_cubes[regex.0] {
+                        if let Some(new_cub_val) = max_cubes.get_mut(regex.0) {
+                            *new_cub_val = cube_val;
+                        }
+                    }
+                }
+            }
+        }
+        let mut set_result = 1;
+        // println!("set--");
+        for cube_val in max_cubes.iter() {
+            // println!("cube_val {}: {}",cube_val.0,cube_val.1);
+            set_result *= cube_val.1;
+        }
+        result += set_result;
+    }
+
+    println!("{}",result);
+}
+
+fn color_regex(color: (&str,i32)) -> (Regex,i32) {
+    let regex = Regex::new(format!(r"(?<match>\d*?) {}",color.0)
+                                .as_str())
+                                .expect("is a regex");
+    return (regex,color.1);
 }
