@@ -1,0 +1,5 @@
+**/target
+**/settings.json
+**/launch.json
+**/*.txt
+**/*.txtclear
