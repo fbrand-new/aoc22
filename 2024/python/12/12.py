@@ -1,7 +1,8 @@
 from heapq import merge
 import itertools
 import copy
-from pprint import pp 
+from pprint import pp
+from turtle import left 
 
 # these calculations work for a connected region. Now we need to distinguish between unconnected regions.
 # we need to do a dfs to find all the connected components. We'll do it in Rome.
@@ -76,7 +77,6 @@ def area(cell_list):
     return len(cell_list)
 
 def connected_components(cell_list,limx,limy):
-    all_cells = copy.deepcopy(cell_list)
 
     connections = []
     for cell in cell_list:
@@ -85,163 +85,60 @@ def connected_components(cell_list,limx,limy):
         if cell in itertools.chain.from_iterable(connections):
             continue
 
-        sides = 4
-        curr_dir = (0,0)
         visited = [cell]
-        dfs(cell,cell_list,visited,limx,limy,sides,curr_dir)
-        connection = {}
-        connection['sides'] = sides
-        connection['cell_list'] = visited
-        connections.append(connection)
+        dfs(cell,cell_list,visited,limx,limy)
+        connections.append(visited)
 
     return connections
 
 
-def dfs(cell,cell_list,visited,limx,limy,sides,curr_dir):
+def dfs(cell,cell_list,visited,limx,limy):
     cell_neighbours = find_neighbours(cell,cell_list,limx,limy)
-    unvisited_neighbours = {k:v for k,v in cell_neighbours.items() if k not in visited}
 
-    new_sides = 0
-    if len(unvisited_neighbours) == 1:
-        for neigh in unvisited_neighbours:
-            if unvisited_neighbours[neigh] != curr_dir and curr_dir != (0,0):
-                new_sides = 2
-    if len(unvisited_neighbours) == 2:
-        new_sides = 4
-    if len(unvisited_neighbours) == 3:
-        new_sides = 6
-    for neigh in unvisited_neighbours:
-        neigh_dir = unvisited_neighbours[neigh]
+    for neigh in cell_neighbours:
+        if neigh in visited:
+            continue
+        neigh_dir = [neigh]
         visited.append(neigh)
-        dfs(neigh,cell_list,visited,limx,limy,sides+new_sides,neigh_dir)
-
-def list_to_map(cell_list,limx,limy):
-    map = [['' for _ in range(limy)] for _ in range(limx)]
-
-    for cell in cell_list:
-        map[cell[0]][cell[1]] = 'x'
-
-    return map
-
-def is_right_side_filled(side,cell_list,limx,limy):
-    # Convert side into cell
-    x = side[0]
-    y = side[1] + 1
-
-    # if (x,y) in cell_list or is_inside((x,y),limx,limy):
-    if (x,y) in cell_list:
-        return True
-
-    return False
-
-def is_down_side_filled(side,cell_list,limx,limy):
-    # Convert side into cell
-    x = side[0] + 1
-    y = side[1] 
-
-    # if (x,y) in cell_list or is_inside((x,y),limx,limy):
-    if (x,y) in cell_list:
-        return True
-
-    return False
-
-def is_up_side_filled(side,cell_list,limx,limy):
-    # Convert side into cell
-    x = side[0] - 1
-    y = side[1] 
-
-    # if (x,y) in cell_list or is_inside((x,y),limx,limy):
-    if (x,y) in cell_list:
-        return True
-
-    return False
-
-def is_down_right_filled(side,cell_list,limx,limy):
-    # Convert side into cell
-    x = side[0] + 1
-    y = side[1] + 1
-
-    # if (x,y) in cell_list or is_inside((x,y),limx,limy):
-    if (x,y) in cell_list:
-        return True
-
-    return False
-
-def is_up_right_filled(side,cell_list,limx,limy):
-    # Convert side into cell
-    x = side[0] - 1
-    y = side[1] + 1
-
-    # if (x,y) in cell_list or is_inside((x,y),limx,limy):
-    if (x,y) in cell_list:
-        return True
-
-    return False
-
-# Deprecated
-def get_sides(cell_list,limx,limy):
-    hor_sides = []
-    ver_sides = []
-    for cell in cell_list:
-        h_sides, v_sides = no_neighbours(cell,cell_list,limx,limy)
-        hor_sides.extend(h_sides)
-        ver_sides.extend(v_sides)
-
-    # horizontal sides needs to be swapped to employ the same "refe*
-    orig_hor_sides = copy.deepcopy(hor_sides)
-    hor_sides = [(side[1],side[0]) for side in hor_sides]
-    hor_sides.sort()
-    
-    ver_sides_to_check = [(side[1],side[0]) for side in hor_sides]
-    ver_sides.sort()
-    merged_h_sides = [[hor_sides[0][0],hor_sides[0][1]]]
-
-    for i in range(1,len(hor_sides)):
-        # Check if the last merged sides matches the h index, and the v index is merged + 1
-        condition1 = merged_h_sides[-1][0] == hor_sides[i][0] and merged_h_sides[-1][1] == hor_sides[i][1] - 1  
-        # condition2 = (merged_h_sides[-1][0],merged_h_sides[-1][1]) not in ver_sides_to_check
-        # condition2 = is_right_side_filled((merged_h_sides[-1][1],merged_h_sides[-1][0]),cell_list,limx,limy)
-        condition2 = is_down_side_filled(merged_h_sides[-1],cell_list,limx,limy)
-        condition3 = is_right_side_filled(merged_h_sides[-1],cell_list,limx,limy)
-        condition4 = is_down_right_filled(merged_h_sides[-1],cell_list,limx,limy)
-        condition5 = not condition2 and not condition3 and condition4
-
-        condition6 = is_up_side_filled(merged_h_sides[-1],cell_list,limx,limy)
-        condition7 = is_up_right_filled(merged_h_sides[-1],cell_list,limx,limy)
-        condition8 = not condition3 and not condition6 and condition7
-
-        if condition1 and not condition5 and not condition8:
-        # if condition1:
-            # Check also if there is an adjacent vertical fence, in that case we cannot merge
-            merged_h_sides[-1][1] = hor_sides[i][1]
-        else:
-            merged_h_sides.append([hor_sides[i][0],hor_sides[i][1]])
+        dfs(neigh,cell_list,visited,limx,limy)
 
 
-    merged_v_sides = [[ver_sides[0][0],ver_sides[0][1]]]
+def sides(region):
 
-    for i in range(1,len(ver_sides)):
-        # Check if the last merged sides matches the h index, and the v index is merged + 1
-        condition1 = merged_v_sides[-1][0] == ver_sides[i][0] and merged_v_sides[-1][1] == ver_sides[i][1] - 1 
-        # condition2 = (merged_h_sides[-1][0],merged_h_sides[-1][1]) not in orig_hor_sides
-        condition2 = is_down_side_filled(merged_v_sides[-1],cell_list,limx,limy)
-        condition3 = is_right_side_filled(merged_v_sides[-1],cell_list,limx,limy)
-        condition4 = is_down_right_filled(merged_v_sides[-1],cell_list,limx,limy)
-        condition5 = not condition2 and not condition3 and condition4
+    # Count the number of corners
+    sides = 0
+    for cell in region:
 
-        condition6 = is_up_side_filled(merged_v_sides[-1],cell_list,limx,limy)
-        condition7 = is_up_right_filled(merged_v_sides[-1],cell_list,limx,limy)
-        condition8 = not condition3 and not condition6 and condition7
-        if condition1 and not condition5 and not condition8: 
-        # if condition1:
-            merged_v_sides[-1][1] = ver_sides[i][1]
-        else:
-            merged_v_sides.append([ver_sides[i][0],ver_sides[i][1]])
+        # If right and top no cell then corner
+        right_cell = add(cell,(0,1))
+        top_cell = add(cell,(-1,0))
+        left_cell = add(cell,(0,-1))
+        down_cell = add(cell,(1,0))
 
-    return merged_h_sides, merged_v_sides
+        corners = 0
+        if right_cell not in region and top_cell not in region:
+            corners+=1
+        if right_cell not in region and down_cell not in region:
+            corners+=1
+        if left_cell not in region and top_cell not in region:
+            corners+=1
+        if left_cell not in region and down_cell not in region:
+            corners+=1
+        if right_cell in region and top_cell in region and add(cell,(-1,1)) not in region:
+            corners+=1
+        if right_cell in region and down_cell in region and add(cell,(1,1)) not in region:
+            corners+=1
+        if left_cell in region and top_cell in region and add(cell,(-1,-1)) not in region:
+            corners+=1
+        if left_cell in region and down_cell in region and add(cell,(1,-1)) not in region:
+            corners+=1
+
+        sides+=corners
+
+    return sides
 
 if __name__ == '__main__':
-    with open('test.txt','r') as f:
+    with open('input.txt','r') as f:
         all_plots = f.read().strip()
         lines = all_plots.splitlines()
 
@@ -256,16 +153,10 @@ if __name__ == '__main__':
         components = connected_components(map[plot], limx, limy)
         for component in components:
             print(plot)
-            print(component['cell_list'])
-            # map =  list_to_map(component,limx,limy)
-        #     perim = perimeter(component,limx,limy)
-            a = area(component['cell_list'])
-            sides = component['sides']
-            # print(f"sides: {hor_sides}")
-            # print(f"ver sides: {ver_sides}")
-            # sides = hor_sides
-            # sides.extend(ver_sides)
-            print(f"sides {sides}")
-            price += a*sides
+            a = area(component)
+            perim = perimeter(component,limx,limy)
+            side = sides(component)
+            print(side)
+            price += a*side
 
     print(f"the total price is {price}")
