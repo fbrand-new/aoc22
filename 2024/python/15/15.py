@@ -168,10 +168,9 @@ def part2(lines,debug=False):
         if debug:
             print(f"Move {action}")
             render(wh_map)
-            input()
+            time.sleep(0.1)
         simulate(wh_map,action,dynamic2)
         if debug:
-            input()
             os.system('cls' if os.name == 'nt' else 'clear')
 
     print(f"The GPS says: {gps(wh_map,'[')}")
@@ -179,7 +178,7 @@ def part2(lines,debug=False):
 
 if __name__ == '__main__':
 
-    with open('input.txt','r') as f:
+    with open('test2.txt','r') as f:
         lines = f.readlines()
 
     # Debug
@@ -194,7 +193,7 @@ if __name__ == '__main__':
     #     os.system('cls' if os.name == 'nt' else 'clear')
 
     # part1(lines)
-    wh_map = part2(lines)
+    wh_map = part2(lines,True)
     # render(wh_map)
 
 
